@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/waste_log.dart';
 import '../models/schedule.dart';
 import '../models/app_notification.dart';
+import '../models/user.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -12,6 +13,26 @@ class DatabaseHelper {
   static const String _scheduleKey = 'schedules_data';
   static const String _pointsSpentKey = 'points_spent_data';
   static const String _notifKey = 'notifications_data';
+  static const String _userKey = 'current_user_data';
+
+  Future<void> saveCurrentUser(User user) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userKey, jsonEncode(user.toMap()));
+  }
+
+  Future<User?> getCurrentUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final str = prefs.getString(_userKey);
+    if (str != null) {
+      return User.fromMap(jsonDecode(str));
+    }
+    return null;
+  }
+
+  Future<void> logoutUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_userKey);
+  }
 
   Future<void> insertNotification(AppNotification notif) async {
     final prefs = await SharedPreferences.getInstance();

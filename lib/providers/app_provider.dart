@@ -4,16 +4,19 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import '../models/waste_log.dart';
 import '../models/schedule.dart';
 import '../models/app_notification.dart';
+import '../models/user.dart';
 import '../services/database_helper.dart';
 import '../services/mongo_service.dart';
 
 class AppProvider with ChangeNotifier {
+  User? _currentUser;
   List<WasteLog> _wasteLogs = [];
   List<PickupSchedule> _schedules = [];
   List<AppNotification> _notifications = [];
   int _totalPoints = 0;
   int _pointsSpent = 0;
   
+  User? get currentUser => _currentUser;
   List<WasteLog> get wasteLogs => _wasteLogs;
   List<PickupSchedule> get schedules => _schedules;
   List<AppNotification> get notifications => _notifications;
@@ -62,6 +65,7 @@ class AppProvider with ChangeNotifier {
 
   Future<void> loadData() async {
     try {
+      _currentUser = await DatabaseHelper.instance.getCurrentUser();
       _wasteLogs = await DatabaseHelper.instance.getWasteLogs();
       _schedules = await DatabaseHelper.instance.getSchedules();
       _notifications = await DatabaseHelper.instance.getNotifications();
@@ -127,6 +131,32 @@ class AppProvider with ChangeNotifier {
   Future<void> deleteSchedule(String id) async {
     await DatabaseHelper.instance.deleteSchedule(id);
     await loadData();
+  }
+
+  Future<void> login(String email, String password) async {
+    final user = await MongoService.loginUser(email, password);
+    if (user != null) {
+      await DatabaseHelper.instance.saveCurrentUser(user);
+      _currentUser = user;
+      notifyListeners();
+    } else {
+      throw Exception('Invalid email or password');
+    }
+  }
+
+  Future<void> register(String name, String email, String password) async {
+    final user = await MongoService.registerUser(name, email, password);
+    if (user != null) {
+      await DatabaseHelper.instance.saveCurrentUser(user);
+      _currentUser = user;
+      notifyListeners();
+    }
+  }
+
+  Future<void> logout() async {
+    await DatabaseHelper.instance.logoutUser();
+    _currentUser = null;
+    notifyListeners();
   }
 }
 
