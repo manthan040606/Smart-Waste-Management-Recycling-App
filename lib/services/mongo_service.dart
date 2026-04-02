@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 class MongoService {
   static Db? _db;
   // URL encoding the password "manthan@1543" -> "manthan%401543" to avoid parsing errors
-  static const String _uri = "mongodb+srv://verified3737_db_user:manthan%401543@23it007.khzjsrh.mongodb.net/?appName=23IT007";
+  static const String _uri = "mongodb+srv://verified3737_db_user:manthan%401543@23it007.khzjsrh.mongodb.net/smart_waste?appName=23IT007";
   
   static Future<void> connect() async {
     if (_db != null && _db!.isConnected) return;
@@ -25,12 +25,16 @@ class MongoService {
     
     final collection = _db!.collection('waste_logs');
     for (var log in logs) {
-      final doc = log.toMap();
-      await collection.update(
-        where.eq('id', log.id),
-        doc,
-        upsert: true,
-      );
+      try {
+        final existing = await collection.findOne(where.eq('id', log.id));
+        if (existing == null) {
+          await collection.insert(log.toMap());
+        } else {
+          await collection.update(where.eq('id', log.id), log.toMap());
+        }
+      } catch (e) {
+        debugPrint('Mongo Error: $e');
+      }
     }
   }
   
@@ -40,12 +44,16 @@ class MongoService {
     
     final collection = _db!.collection('schedules');
     for (var schedule in schedules) {
-      final doc = schedule.toMap();
-      await collection.update(
-        where.eq('id', schedule.id),
-        doc,
-        upsert: true,
-      );
+      try {
+        final existing = await collection.findOne(where.eq('id', schedule.id));
+        if (existing == null) {
+          await collection.insert(schedule.toMap());
+        } else {
+          await collection.update(where.eq('id', schedule.id), schedule.toMap());
+        }
+      } catch (e) {
+        debugPrint('Mongo Error: $e');
+      }
     }
   }
 }

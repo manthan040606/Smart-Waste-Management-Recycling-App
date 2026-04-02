@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../models/schedule.dart';
 import '../providers/app_provider.dart';
 import 'package:intl/intl.dart';
+import '../widgets/notification_badge.dart';
 
 class SchedulingScreen extends StatefulWidget {
   const SchedulingScreen({Key? key}) : super(key: key);
@@ -153,6 +154,65 @@ class _SchedulingScreenState extends State<SchedulingScreen> {
               foregroundColor: Colors.white,
             ),
           ),
+          const SizedBox(height: 32),
+          const Divider(),
+          const SizedBox(height: 8),
+          Text(
+            'Track Pickups',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green.shade800),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Consumer<AppProvider>(
+            builder: (context, provider, child) {
+              final schedules = provider.schedules;
+              if (schedules.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text('No pickups scheduled yet.', textAlign: TextAlign.center),
+                );
+              }
+              return ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: schedules.length > 5 ? 5 : schedules.length,
+                itemBuilder: (context, index) {
+                  final sched = schedules[index];
+                  bool isPending = sched.status == 'pending';
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: ListTile(
+                      leading: Icon(
+                        isPending ? Icons.local_shipping : Icons.check_circle,
+                        color: isPending ? Colors.orange : Colors.green,
+                      ),
+                      title: Text(DateFormat('dd MMM yyyy, hh:mm a').format(sched.scheduledTime)),
+                      subtitle: Text(sched.address),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            sched.status.toUpperCase(),
+                            style: TextStyle(
+                              color: isPending ? Colors.orange : Colors.green,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () {
+                              Provider.of<AppProvider>(context, listen: false).deleteSchedule(sched.id);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
         ],
       ),
     );
@@ -185,6 +245,12 @@ class _SchedulingScreenState extends State<SchedulingScreen> {
                 title: Text(sched.address, style: const TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: Text('Time: ${DateFormat('dd MMM yyyy, hh:mm a').format(sched.scheduledTime)}\nStatus: ${sched.status.toUpperCase()}'),
                 isThreeLine: true,
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () {
+                    Provider.of<AppProvider>(context, listen: false).deleteSchedule(sched.id);
+                  },
+                ),
               ),
             );
           },
@@ -200,6 +266,7 @@ class _SchedulingScreenState extends State<SchedulingScreen> {
         title: const Text('Schedule Pickup'),
         centerTitle: true,
         actions: [
+          const NotificationBadge(),
           Row(
             children: [
               const Text('Admin', style: TextStyle(fontSize: 12)),

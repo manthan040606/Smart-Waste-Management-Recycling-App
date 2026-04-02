@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
+import '../widgets/notification_badge.dart';
 
 class RewardsScreen extends StatelessWidget {
   const RewardsScreen({Key? key}) : super(key: key);
@@ -8,7 +9,7 @@ class RewardsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Rewards Program'), centerTitle: true),
+      appBar: AppBar(title: const Text('Rewards Program'), centerTitle: true, actions: const [NotificationBadge()]),
       body: Consumer<AppProvider>(
         builder: (context, provider, child) {
           int points = provider.totalPoints;
@@ -77,9 +78,11 @@ class RewardsScreen extends StatelessWidget {
           backgroundColor: canRedeem ? Colors.green : Colors.grey.shade300,
           foregroundColor: canRedeem ? Colors.white : Colors.grey,
         ),
-        onPressed: canRedeem ? () {
+        onPressed: canRedeem ? () async {
+          await Provider.of<AppProvider>(context, listen: false).redeemReward(cost);
+          if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Redeemed $title! (Mock)')),
+            SnackBar(content: Text('Successfully Redeemed $title!'), backgroundColor: Colors.green),
           );
         } : null, 
         child: const Text('Redeem')

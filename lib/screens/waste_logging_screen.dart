@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../models/waste_log.dart';
 import '../providers/app_provider.dart';
+import '../widgets/notification_badge.dart';
 
 class WasteLoggingScreen extends StatefulWidget {
   const WasteLoggingScreen({Key? key}) : super(key: key);
@@ -77,15 +78,14 @@ class _WasteLoggingScreenState extends State<WasteLoggingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Log Waste'),
-        centerTitle: true,
-      ),
-      body: Padding(
+      appBar: AppBar(title: const Text('Log Waste'), centerTitle: true, actions: const [NotificationBadge()]),
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: ListView(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
             children: [
               Card(
                 color: Colors.green.shade50,
@@ -160,6 +160,58 @@ class _WasteLoggingScreenState extends State<WasteLoggingScreen> {
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
                 ),
+              ),
+              const SizedBox(height: 32),
+              const Divider(),
+              const SizedBox(height: 8),
+              Text(
+                'Recent Logs',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green.shade800),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Consumer<AppProvider>(
+                builder: (context, provider, child) {
+                  final logs = provider.wasteLogs;
+                  if (logs.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text('No waste logged yet.', textAlign: TextAlign.center),
+                    );
+                  }
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: logs.length > 5 ? 5 : logs.length,
+                    itemBuilder: (context, index) {
+                      final log = logs[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        child: ListTile(
+                          leading: Icon(
+                            log.syncStatus == 1 ? Icons.cloud_done : Icons.cloud_upload, 
+                            color: log.syncStatus == 1 ? Colors.green : Colors.orange
+                          ),
+                          title: Text('${log.category.toUpperCase()} - ${log.quantityKg}kg'),
+                          subtitle: Text(log.description),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('+${log.points} pts', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () {
+                                  Provider.of<AppProvider>(context, listen: false).deleteWasteLog(log.id);
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
               ),
             ],
           ),

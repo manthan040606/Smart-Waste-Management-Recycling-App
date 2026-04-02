@@ -3,6 +3,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:math';
+import 'package:url_launcher/url_launcher.dart';
+import '../widgets/notification_badge.dart';
 
 class RecyclingLocatorScreen extends StatefulWidget {
   const RecyclingLocatorScreen({Key? key}) : super(key: key);
@@ -107,7 +109,7 @@ class _RecyclingLocatorScreenState extends State<RecyclingLocatorScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Nearby Centers')),
+      appBar: AppBar(title: const Text('Nearby Centers'), actions: const [NotificationBadge()]),
       body: _isLoading 
         ? const Center(child: CircularProgressIndicator())
         : _errorMessage.isNotEmpty && _currentPosition == null
@@ -160,10 +162,19 @@ class _RecyclingLocatorScreenState extends State<RecyclingLocatorScreen> {
                                  subtitle: Text(_centers[index]['distance']),
                                  trailing: IconButton(
                                    icon: const Icon(Icons.directions, color: Colors.blue),
-                                   onPressed: () {
-                                     ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Navigation feature mocked.')),
-                                     );
+                                   onPressed: () async {
+                                     final loc = _centers[index]['location'] as LatLng;
+                                     final urlStr = 'https://www.google.com/maps/search/?api=1&query=${loc.latitude},${loc.longitude}';
+                                     final uri = Uri.parse(urlStr);
+                                     try {
+                                       await launchUrl(uri);
+                                     } catch (e) {
+                                       if (context.mounted) {
+                                         ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('Error: Please restart the app completely to load the Maps plugin!')),
+                                         );
+                                       }
+                                     }
                                    },
                                  ),
                                );

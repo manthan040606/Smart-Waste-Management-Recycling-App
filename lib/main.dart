@@ -9,6 +9,7 @@ import 'screens/recycling_locator_screen.dart';
 import 'providers/app_provider.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(
     MultiProvider(
       providers: [
@@ -16,7 +17,7 @@ void main() {
       ],
       child: DevicePreview(
         enabled: !kReleaseMode,
-        builder: (context) => const GreenCityApp(), // Wrap your app
+        builder: (context) => const GreenCityApp(), 
       ),
     ),
   );
